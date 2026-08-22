@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // The base config sets rootDir to src/ so emitted output is flat. This config
+    // emits nothing, so the constraint only gets in the way of seeing test/.
+    "rootDir": "."
+  },
+  // `exclude` is inherited from the base config and wins over `include`, so it has
+  // to be overridden explicitly. Without this line the config resolves to zero
+  // files and reports success -- a typecheck that checks nothing and says it passed.
+  "exclude": ["node_modules", "dist"],
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

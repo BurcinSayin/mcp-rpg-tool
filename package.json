@@ -1,0 +1,48 @@
+{
+  "name": "@orinnadiak/mcp-rpg-tools",
+  "version": "0.1.0",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": ["dist/**/*.js", "dist/**/*.js.map", "dist/**/*.d.ts", "README.md", "docs/providers/pf2e.md", "LICENSE"],
+  "description": "MCP server exposing tabletop RPG rules lookup tools. Pathfinder 2e via Archives of Nethys.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "mcp-rpg-tools": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node --input-type=module -e \"import { chmodSync } from 'node:fs'; chmodSync('dist/index.js', 0o755);\"",
+    "prepack": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\" && npm run build",
+    "test:package": "vitest run --project package",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
+    "lint": "eslint .",
+    "pretest": "tsc -p tsconfig.json",
+    "test": "vitest run --project unit --project integration",
+    "test:watch": "vitest --project unit",
+    "test:live": "vitest run --project live",
+    "test:mutation": "python scripts/mutation-matrix.py",
+    "start": "node dist/index.js",
+    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@modelcontextprotocol/inspector": "^2.3.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import": "^2.31.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.0.0",
+    "undici": "^7.0.0",
+    "vitest": "^2.1.0"
+  }
+}
