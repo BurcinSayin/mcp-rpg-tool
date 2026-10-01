@@ -14,6 +14,17 @@ Releases are automated via GitHub Actions workflows and orchestrated by [`script
 
 Runtime and development tooling require Node **22.19.0 or newer**; Node **24** is recommended for local release work. The supported Node lines are **22** (22.19.0+) and **24**. Node 20 is no longer supported: MCP Inspector 2.3 and its nested undici 8 require the new floor. Use the pinned npm **11.16.0** (`npm install --global npm@11.16.0`) with the committed lockfile for reproducible installs.
 
+### Tag Selection and Dry Runs
+
+- An explicit `--tag` takes precedence and must match `v` plus the package and server versions.
+- On an actual GitHub tag ref, the script uses and validates that tag even with `--dry-run`.
+- Without an explicit tag, GitHub branch/PR dry runs synthesize `v` plus the package version. Local runs and non-publishing `--validate`/`--pack` runs retain the package-version fallback.
+- Real publishing on a GitHub branch or other non-tag ref is rejected before packing unless an explicit matching `--tag` is supplied.
+
+A manual release workflow dispatch on a branch with `dry_run=true` works for packaging verification; use a matching tag ref for the normal real-publish workflow. No workflow-specific tag override is needed for branch dry runs.
+
+Dry runs still validate the selected tag and versions, pack the tarball, write metadata, run the packaging smoke test, and query npm. They do not run typechecking, linting, or unit/integration tests; run those separately. Ancestry failures and published checksum mismatches are warnings in dry-run mode rather than failed gates.
+
 ---
 
 ## 2. Initial Setup and Package Bootstrap (One-Time Maintainer Configuration)

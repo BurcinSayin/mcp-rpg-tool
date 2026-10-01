@@ -7,6 +7,7 @@ import {
   computeFileChecksums,
   generateReleaseNotes,
   parseSemver,
+  resolveReleaseTag,
   validateReleaseTag,
   verifyDefaultBranchAncestry,
 } from '../../scripts/release.mjs';
@@ -94,6 +95,101 @@ describe('validateReleaseTag', () => {
     expect(() => validateReleaseTag('v0.1.0', '0.1.0', '0.2.0')).toThrow(
       /package\.json version "0.1\.0" does not match MCP server version "0\.2\.0"/
     );
+  });
+});
+
+describe('resolveReleaseTag', () => {
+  const githubBranch = {
+    githubActions: 'true',
+    githubRefType: 'branch',
+    githubRefName: 'main',
+  };
+
+  it.each(['main', '123/merge', 'v0.1.0'])(
+    'uses the package version for non-tag dry runs on %s',
+    (githubRefName) => {
+      expect(resolveReleaseTag('0.1.0', {
+        ...githubBranch,
+        githubRefName,
+        isDryRun: true,
+      })).toEqual({
+        tag: 'v0.1.0',
+        version: '0.1.0',
+        isPrerelease: false,
+        distTag: 'latest',
+      });
+    }
+  );
+
+  it('uses and validates an actual GitHub tag in a dry run', () => {
+    const options = { ...githubBranch, githubRefType: 'tag', isDryRun: true };
+    expect(resolveReleaseTag('0.1.0-next.1', {
+      ...options,
+      githubRefName: 'v0.1.0-next.1',
+    })).toEqual({
+      tag: 'v0.1.0-next.1',
+      version: '0.1.0-next.1',
+      isPrerelease: true,
+      distTag: 'next',
+    });
+    expect(() => resolveReleaseTag('0.1.0', {
+      ...options,
+      githubRefName: 'v0.2.0',
+    })).toThrow(/does not match package\.json/);
+    expect(() => resolveReleaseTag('0.1.0', {
+      ...options,
+      githubRefName: undefined,
+    })).toThrow(/must start with 'v'/);
+  });
+
+  it('gives a valid explicit tag precedence over GitHub tag or branch refs', () => {
+    for (const githubRefType of ['tag', 'branch']) {
+      expect(resolveReleaseTag('0.1.0', {
+        ...githubBranch,
+        githubRefType,
+        githubRefName: 'v0.2.0',
+        explicitTag: 'v0.1.0',
+      }).tag).toBe('v0.1.0');
+    }
+  });
+
+  it.each(['invalid', 'v0.2.0', ''])(
+    'rejects explicit tag %j instead of falling back to a valid GitHub tag',
+    (explicitTag) => {
+      expect(() => resolveReleaseTag('0.1.0', {
+        ...githubBranch,
+        githubRefType: 'tag',
+        githubRefName: 'v0.1.0',
+        explicitTag,
+        isDryRun: true,
+      })).toThrow();
+    }
+  );
+
+  it.each(['main', '123/merge', 'v0.1.0'])(
+    'rejects GitHub non-tag publication on %s without an explicit tag',
+    (githubRefName) => {
+      expect(() => resolveReleaseTag('0.1.0', {
+        ...githubBranch,
+        githubRefName,
+      })).toThrow(/requires a tag ref or an explicit --tag/);
+    }
+  );
+
+  it('preserves package-version fallback for local publication and non-publishing GitHub modes', () => {
+    expect(resolveReleaseTag('0.1.0').tag).toBe('v0.1.0');
+    expect(resolveReleaseTag('0.1.0', {
+      ...githubBranch,
+      isNonPublishing: true,
+    }).tag).toBe('v0.1.0');
+  });
+
+  it('still validates the server version when using the package-version fallback', () => {
+    expect(() => resolveReleaseTag('0.1.0', {
+      ...githubBranch,
+      isDryRun: true,
+      serverVersion: '0.2.0',
+    })).toThrow(/does not match MCP server version/);
   });
 });
 

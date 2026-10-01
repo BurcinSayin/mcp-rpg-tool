@@ -88,6 +88,12 @@ typechecking, linting, or unit/integration tests. Run `npm run typecheck`,
 `npm run lint`, and `npm test` separately for full verification. Ancestry failures
 and published checksum mismatches are warnings in dry-run mode, not failed gates.
 
+Tag selection remains validated in dry-run mode: an explicit `--tag` takes
+precedence, and GitHub tag runs use the actual tag. Branch/PR dry runs and local
+runs without a tag use `v` plus the package version. A manual release workflow run
+on a branch with `dry_run=true` can check packaging; real GitHub publishing
+requires a tag ref or an explicit matching `--tag`.
+
 ### Environment variables
 
 | Variable | Default | Effect |

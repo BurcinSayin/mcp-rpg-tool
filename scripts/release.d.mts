@@ -51,6 +51,19 @@ export function validateReleaseTag(
   serverVersion?: string
 ): ValidatedReleaseTag;
 
+export function resolveReleaseTag(
+  packageVersion: string,
+  options?: {
+    explicitTag?: string;
+    serverVersion?: string;
+    githubActions?: string;
+    githubRefType?: string;
+    githubRefName?: string;
+    isDryRun?: boolean;
+    isNonPublishing?: boolean;
+  }
+): ValidatedReleaseTag;
+
 export function verifyDefaultBranchAncestry(
   gitRef?: string,
   defaultBranch?: string,

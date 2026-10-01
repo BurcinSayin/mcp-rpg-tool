@@ -85,6 +85,46 @@ export function validateReleaseTag(tag, packageVersion, serverVersion) {
 }
 
 /**
+ * Selects and validates a release tag without treating branch/PR names as tags.
+ * @param {string} packageVersion
+ * @param {{
+ *   explicitTag?: string,
+ *   serverVersion?: string,
+ *   githubActions?: string,
+ *   githubRefType?: string,
+ *   githubRefName?: string,
+ *   isDryRun?: boolean,
+ *   isNonPublishing?: boolean,
+ * }} [options]
+ * @returns {{ tag: string, version: string, isPrerelease: boolean, distTag: string }}
+ */
+export function resolveReleaseTag(packageVersion, options = {}) {
+  const {
+    explicitTag,
+    serverVersion,
+    githubActions,
+    githubRefType,
+    githubRefName,
+    isDryRun = false,
+    isNonPublishing = false,
+  } = options;
+
+  let tag;
+  if (explicitTag !== undefined) {
+    tag = explicitTag;
+  } else if (githubRefType === 'tag') {
+    tag = githubRefName;
+  } else {
+    if (githubActions === 'true' && !isDryRun && !isNonPublishing) {
+      throw new Error('GitHub publication requires a tag ref or an explicit --tag.');
+    }
+    tag = `v${packageVersion}`;
+  }
+
+  return validateReleaseTag(tag, packageVersion, serverVersion);
+}
+
+/**
  * Verifies that the specified git commit/ref is in the history of the default branch.
  * @param {string} [gitRef='HEAD']
  * @param {string} [defaultBranch='main']
@@ -336,17 +376,21 @@ export async function main(argv = process.argv.slice(2)) {
     // If not built yet, fallback to packageVersion
   }
 
-  // Tag extraction: from argument or environment
-  let tagArg = argv.find((a, i) => argv[i - 1] === '--tag');
-  if (!tagArg) {
-    tagArg = process.env.GITHUB_REF_NAME || `v${packageVersion}`;
-  }
+  const tagArg = argv.find((a, i) => argv[i - 1] === '--tag');
+  const validated = resolveReleaseTag(packageVersion, {
+    explicitTag: tagArg,
+    serverVersion,
+    githubActions: process.env.GITHUB_ACTIONS,
+    githubRefType: process.env.GITHUB_REF_TYPE,
+    githubRefName: process.env.GITHUB_REF_NAME,
+    isDryRun,
+    isNonPublishing: isValidateOnly || isPackOnly,
+  });
 
   console.error(`[release] Checking release for package ${packageName}`);
-  console.error(`[release] Tag: ${tagArg}, package.json: ${packageVersion}, MCP server: ${serverVersion}`);
+  console.error(`[release] Tag: ${validated.tag}, package.json: ${packageVersion}, MCP server: ${serverVersion}`);
 
   // 1. Validation
-  const validated = validateReleaseTag(tagArg, packageVersion, serverVersion);
   console.error(
     `[release] Tag validation passed. Version: ${validated.version}, Prerelease: ${validated.isPrerelease}, Dist-tag: ${validated.distTag}`
   );
