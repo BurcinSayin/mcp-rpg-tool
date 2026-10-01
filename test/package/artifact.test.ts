@@ -21,10 +21,21 @@ it('installs a production-only tarball and serves MCP through its entry and npm 
       throw new Error('Artifact consumer must be outside the checkout');
     }
     const cache = path.join(temporary, 'npm-cache');
+    const userconfig = path.join(temporary, '.npmrc');
+    await writeFile(userconfig, '');
+    const cleanEnv: Record<string, string | undefined> = { ...process.env, npm_config_cache: cache };
+    for (const key of Object.keys(cleanEnv)) {
+      if (key.toLowerCase().includes('script') || key.toLowerCase().includes('allow')
+        || key.toLowerCase() === 'npm_config_userconfig') {
+        delete cleanEnv[key];
+      }
+    }
+    cleanEnv['npm_config_userconfig'] = userconfig;
+    cleanEnv['npm_config_ignore_scripts'] = 'false';
     const npm = async (args: string[], cwd: string) => {
       try {
         const result = await exec(process.execPath, [npmCli, ...args], {
-          cwd, env: { ...process.env, npm_config_cache: cache, npm_config_ignore_scripts: 'false' },
+          cwd, env: cleanEnv,
           timeout: 120000, maxBuffer: 8 * 1024 * 1024,
         });
         diagnostics += `\n${args.join(' ')}\n${result.stdout}\n${result.stderr}`;
@@ -47,10 +58,13 @@ it('installs a production-only tarball and serves MCP through its entry and npm 
       expect(file, 'Unexpected packed member').toMatch(/^(?:package\.json|README\.md|docs\/providers\/pf2e\.md|LICENSE|dist\/(?:[^/]+\/)*[^/]+\.(?:js|js\.map|d\.ts))$/);
     }
     const entry = artifact.files.find((file) => file.path === 'dist/index.js')!;
-    if (entry.mode !== undefined) expect(entry.mode & 0o111).not.toBe(0);
+    if (process.platform !== 'win32' && entry.mode !== undefined) {
+      expect(entry.mode & 0o111).not.toBe(0);
+    }
     const consumer = path.join(temporary, 'consumer');
     await mkdir(consumer);
     await writeFile(path.join(consumer, 'package.json'), JSON.stringify({ name: 'artifact-consumer', private: true }));
+    await writeFile(path.join(consumer, '.npmrc'), '');
     await npm(['install', '--omit=dev', '--no-audit', '--no-fund', path.join(temporary, artifact.filename)], consumer);
     const installed = path.join(consumer, 'node_modules', '@orinnadiak', 'mcp-rpg-tools');
     const metadata = JSON.parse(await readFile(path.join(installed, 'package.json'), 'utf8')) as {

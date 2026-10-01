@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (validate and generate assets without publishing to npm or GitHub)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-publish
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish and Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository (full history for ancestry check)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch default branch for ancestry verification
+        run: git fetch origin main
+
+      - name: Setup Node.js 22.19.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup npm
+        run: npm install --global npm@11.16.0
+
+      - name: Install dependencies (clean install)
+        run: npm ci
+
+      - name: Run verification gate
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+
+      - name: Execute Release Workflow
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            node scripts/release.mjs --dry-run
+          else
+            node scripts/release.mjs
+          fi

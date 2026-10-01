@@ -10,8 +10,9 @@
   "description": "MCP server exposing tabletop RPG rules lookup tools. Pathfinder 2e via Archives of Nethys.",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.19.0"
   },
+  "packageManager": "npm@11.16.0",
   "bin": {
     "mcp-rpg-tools": "./dist/index.js"
   },
@@ -19,6 +20,7 @@
     "build": "tsc -p tsconfig.json && node --input-type=module -e \"import { chmodSync } from 'node:fs'; chmodSync('dist/index.js', 0o755);\"",
     "prepack": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\" && npm run build",
     "test:package": "vitest run --project package",
+    "release:check": "node scripts/release.mjs --dry-run",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "lint": "eslint .",
     "pretest": "tsc -p tsconfig.json",

@@ -3,6 +3,8 @@ dist/
 *.tsbuildinfo
 .env
 .idea/
+artifacts/
+*.tgz
 
 # OMC operational state — session-scoped, ephemeral, not project content.
 # Nested form matters: state has been written under .omc/plans/.omc/state/ too.

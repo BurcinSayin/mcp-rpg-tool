@@ -10,7 +10,8 @@ lowest common denominator.
 
 ## Requirements
 
-Node **20 or newer**; Node **24** is recommended for new installations.
+Node **22.19.0 or newer**; supported Node lines are **22** (22.19.0+) and **24**.
+Node **24** is recommended for new installations. Node **20** is no longer supported.
 Pathfinder 2e requires a network connection — see its
 [operational notes](docs/providers/pf2e.md#operational-notes).
 
@@ -62,44 +63,30 @@ launch `mcp-rpg-tools.cmd` directly likewise need `cmd` with
 To upgrade, replace the explicit version and restart the MCP server. Global users
 reinstall the desired exact version.
 
-### Release verification and ownership
+### Release verification, ownership, and automation
 
 The repository remains private; publishing makes the shipped JavaScript public.
-The owner must verify control of the `orinnadiak` npm namespace. An anonymous
-registry 404 does not establish ownership or permission to publish.
+Releases are automated via GitHub Actions when an annotated semantic-version tag
+(e.g. `v0.1.0`) is pushed to `main`. See the [Release Runbook](docs/release-runbook.md)
+for step-by-step guidance on version bumps, tagging, npm Trusted Publishing (OIDC),
+dist-tags, recovery from partial completion, and private repository limitations.
 
-The installed-tarball suite passed on Linux x64 with Node **20.0.0**, **20.20.2**,
-**22.23.3**, and **24.21.0**, using each runtime's bundled npm. It checks direct
-Node execution and npm's installed-bin resolution with a deterministic toy lookup.
-The declared Node floor remains `>=20`. Native Windows verification was reported
-complete by the owner on 2026-09-27; runtime versions and logs were not supplied.
-No macOS support is claimed.
-Actual pinned `npx` and global registry-install launches remain unverified until
-publication.
+CI covers the installed-tarball suite on Linux x64 and Windows with Node **22.19.0**
+(the exact supported minimum) and **24**, using npm **11.16.0** on both runtimes. It checks direct Node
+execution and npm's installed-bin resolution with a deterministic toy lookup outside
+the checkout. The declared Node floor is `>=22.19.0`, matching MCP Inspector's
+development-tool requirement.
 
-Release gates (manual; no publishing automation):
+You can check release packaging and generate metadata locally without publishing:
 
-1. Run `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, and
-   `npm run test:package`. The package suite is opt-in and may access npm.
-   Repeat `npm run test:package` on Linux and native Windows with the Node
-   versions above and compatible bundled npm.
-2. Authenticate with npm, run `npm whoami --registry https://registry.npmjs.org/`,
-   and verify package access and namespace control. Check whether `0.1.0` already
-   exists; do not overwrite it or silently choose another version or scope.
-3. Pack with lifecycle scripts enabled and retain the verified tarball. `prepack`
-   deletes only generated `dist` output and rebuilds JS, declarations, and maps;
-   the build marks the CLI executable. Ship only those outputs, package metadata,
-   README, `docs/providers/pf2e.md`, and LICENSE — no rules dataset.
-4. Only after all gates pass, the owner publishes that exact verified tarball:
-   `npm publish <verified-tarball> --access public --registry https://registry.npmjs.org/`.
-5. From fresh temporary directories/caches, verify the pinned Linux and Windows
-   launch forms above and a global install into a temporary prefix. With
-   `GAME_SYSTEM=toy`, check MCP server name `rpg-lookup`, version `0.1.0`,
-   `toy_search_widget` and `toy_get_widget_details`, and details for `widget-1`
-   returning `A small brass widget. Turns clockwise.`. Check anonymous access at
-   `https://registry.npmjs.org/@orinnadiak%2fmcp-rpg-tools`.
+```powershell
+npm run release:check   # dry-run: packs, writes metadata, runs test:package, queries npm
+```
 
-Publication is owner-operated and has not been performed by the local tests.
+This dry run writes artifacts and checks npm publication status, but does not run
+typechecking, linting, or unit/integration tests. Run `npm run typecheck`,
+`npm run lint`, and `npm test` separately for full verification. Ancestry failures
+and published checksum mismatches are warnings in dry-run mode, not failed gates.
 
 ### Environment variables
 
@@ -167,9 +154,10 @@ see the [Pathfinder content notices](docs/providers/pf2e.md#attribution-and-lice
 ## Development
 
 Source builds remain a development alternative: clone the repository with access,
-then run:
+use Node 22.19.0+ (Node 24 recommended) and the pinned npm 11.16.0, then run:
 
 ```sh
+npm install --global npm@11.16.0
 npm ci
 npm run build
 ```
@@ -184,6 +172,7 @@ npm test              # unit + integration, network mechanically disabled
 npm run test:live     # opt-in; hits the real API to detect upstream drift
 npm run test:package  # opt-in; packs, installs, and launches outside the checkout
 npm run test:mutation # breaks each invariant, checks a test notices
+npm run release:check # dry-run; packaging/metadata checks, writes artifacts and queries npm
 ```
 
 `typecheck` runs two configs. The base one excludes `test/`, and vitest transpiles
