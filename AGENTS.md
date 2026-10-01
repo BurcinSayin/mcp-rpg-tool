@@ -50,6 +50,7 @@ Focused unit example: `npx vitest run --project unit test/unit/cache.test.ts`. D
 ## Code Conventions & Common Patterns
 
 - Use strict TypeScript ESM with explicit `.js` import suffixes and type-only imports where appropriate (`NodeNext`, `verbatimModuleSyntax`). Follow surrounding formatting; no formatter is configured.
+- `.gitattributes` enforces LF checkout for `*.mjs`; keep shebang modules LF. Verify Windows checkout behavior with a fresh Git checkout using `core.autocrlf=true`, not a locally copied tree.
 - Prefer domain names such as `Provider`, `Client`, `Descriptor`, `Entry`, and `Result`, readonly metadata, and ECMAScript `#private` mutable state. Tools follow `<system>_search_<category>` and `<system>_get_<category>_details`.
 - Add provider factories and owned configuration keys in `src/registry.ts`. Keep category/filter/capability/routing metadata provider-owned; do not add game-specific branches to shared tool generation. Declared local filters must apply before limiting results.
 - Centralize shared budgets and limits in `src/constants.ts`; keep provider-specific query/relevance constants inside the adapter.
