@@ -77,6 +77,22 @@ describe('validateReleaseTag', () => {
     });
   });
 
+  it.each([
+    ['0.1.0-beta.1', 'beta'],
+    ['0.1.0-beta', 'beta'],
+    ['0.1.0-beta.1+build.7', 'beta'],
+    ['0.1.0-betamax.1', 'next'],
+    ['0.1.0-alpha.beta', 'next'],
+    ['0.1.0-BETA.1', 'next'],
+  ])('routes prerelease %s to %s', (version, distTag) => {
+    expect(validateReleaseTag(`v${version}`, version, version)).toEqual({
+      tag: `v${version}`,
+      version,
+      isPrerelease: true,
+      distTag,
+    });
+  });
+
   it('rejects tags without a leading v', () => {
     expect(() => validateReleaseTag('0.1.0', '0.1.0')).toThrow(/must start with 'v'/);
   });

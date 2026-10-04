@@ -9,7 +9,7 @@ This guide describes the release process for `@orinnadiak/mcp-rpg-tools`, coveri
 Releases are automated via GitHub Actions workflows and orchestrated by [`scripts/release.mjs`](../scripts/release.mjs):
 
 - **CI (`.github/workflows/ci.yml`)**: Triggered on all Pull Requests and pushes to `main`. Runs typecheck, lint, build, offline unit and integration tests across the exact minimum Node 22.19.0 and Node 24 on Linux and Windows, followed by packaging smoke tests outside the checkout and a release dry-run check. All jobs install npm 11.16.0 before `npm ci`; dry-run and release jobs use Node 22.19.0. Operates with read-only permissions (`contents: read`) and has no registry publish access.
-- **Release (`.github/workflows/release.yml`)**: Triggered strictly by maintainer-pushed tags matching `v*.*.*` (e.g. `v0.1.0`, `v0.2.0-next.0`). Validates that the tag, `package.json` version, and MCP server version match; verifies that the tag commit exists in the history of the default branch (`main`); packs once and tests the tarball outside the checkout; verifies npm checksums; publishes to npm using OIDC trusted publishing; and creates a matching GitHub Release with assets, SHA-256 checksums, and version-pinned configuration instructions.
+- **Release (`.github/workflows/release.yml`)**: Triggered strictly by maintainer-pushed tags matching `v*.*.*` (e.g. `v0.1.0-beta.1`, `v0.2.0-next.0`). Validates that the tag, `package.json` version, and MCP server version match; verifies that the tag commit exists in the history of the default branch (`main`); packs once and tests the tarball outside the checkout; verifies npm checksums; publishes to npm using OIDC trusted publishing; and creates a matching GitHub Release with assets, SHA-256 checksums, and version-pinned configuration instructions.
 - **Concurrency**: Release publishing is serialized with `concurrency: group: release-publish` and `cancel-in-progress: false` to prevent race conditions or duplicate publishing.
 
 Runtime and development tooling require Node **22.19.0 or newer**; Node **24** is recommended for local release work. The supported Node lines are **22** (22.19.0+) and **24**. Node 20 is no longer supported: MCP Inspector 2.3 and its nested undici 8 require the new floor. Use the pinned npm **11.16.0** (`npm install --global npm@11.16.0`) with the committed lockfile for reproducible installs.
@@ -68,13 +68,33 @@ The project adheres to [Semantic Versioning 2.0.0](https://semver.org/).
 
 ### 3.1. Stable Releases vs. Prereleases
 
-- **Stable Versions** (e.g. `0.1.0`, `1.0.0`):
-  - npm dist-tag: `latest`
-  - GitHub Release: Standard release (`prerelease: false`)
-- **Prereleases** (e.g. `0.2.0-next.0`, `0.2.0-beta.1`):
+- **Beta Versions** (e.g. `0.1.0-beta.1`; first prerelease identifier exactly `beta`):
+  - npm dist-tag: `beta`
+  - GitHub Release: Flagged as prerelease (`prerelease: true`)
+- **Other Prereleases** (e.g. `0.1.0-next.1`, `0.1.0-alpha.1`, `0.1.0-rc.1`):
   - npm dist-tag: `next`
   - GitHub Release: Flagged as prerelease (`prerelease: true`)
-  - **Critical Invariant**: A prerelease **never** updates or overwrites npm's stable `latest` dist-tag. Users running `npx @orinnadiak/mcp-rpg-tools` or `npm install @orinnadiak/mcp-rpg-tools` will continue receiving the latest stable release.
+- **Future Stable Versions** (e.g. `0.1.0`, `1.0.0`):
+  - npm dist-tag: `latest`
+  - GitHub Release: Standard release (`prerelease: false`)
+
+**Critical Invariant**: Prerelease publication does not assign npm's `latest`
+dist-tag. Without a stable `latest`, consumers must explicitly select a beta
+version or the `beta` channel; unqualified installs do not select beta.
+
+The current planned release is `0.1.0-beta.1`; subsequent betas increment the
+counter (`0.1.0-beta.2`, etc.). `publishConfig.tag: "beta"` also protects ordinary
+manual `npm publish` from defaulting to `latest`.
+
+npm 11.16.0's publication preview can still print `tag latest` when the tag comes
+from `publishConfig`: its notice uses the original config value, while effective
+publication options use `beta`. Do not treat that preview line as proof of the
+effective channel. The release script passes `--tag beta` explicitly.
+
+Stable promotion is a separate maintainer decision: set the stable version in
+`package.json` and the lockfile, remove `publishConfig.tag: "beta"` before packing,
+and let the existing release script select `latest`. Do not perform these future
+promotion steps as part of beta preparation.
 
 ---
 
@@ -93,7 +113,7 @@ All releases must originate from commits on the default branch (`main`). Release
    ```sh
    npm version <new-version> --no-git-tag-version
    ```
-   *(For example: `npm version 0.2.0 --no-git-tag-version` or `npm version 0.2.0-next.0 --no-git-tag-version`)*
+   *(Current beta example: `npm version 0.1.0-beta.1 --no-git-tag-version`; this updates both package and lockfile versions.)*
 3. Verify local build and test suites pass:
    ```sh
    npm run typecheck
@@ -121,7 +141,7 @@ git tag -a v<new-version> -m "Release v<new-version>"
 git push origin v<new-version>
 ```
 
-*(For example: `git tag -a v0.2.0 -m "Release v0.2.0" && git push origin v0.2.0`)*
+*(Current beta example: `git tag -a v0.1.0-beta.1 -m "Release v0.1.0-beta.1" && git push origin v0.1.0-beta.1`; tagging and pushing are publication steps, not beta preparation.)*
 
 ### Step 3: Monitor Workflow
 
@@ -133,7 +153,7 @@ git push origin v<new-version>
    - Run typecheck, lint, and offline tests.
    - Build and pack the single distribution tarball (`artifacts/release/*.tgz`).
    - Run the packaging smoke test outside the checkout with only production dependencies.
-   - Publish to npm under `latest` or `next` with provenance.
+   - Publish the current beta to npm under `beta` with provenance (`next` for other prereleases; `latest` for future stable releases).
    - Create a GitHub Release with the tarball, `.sha256` checksum, and release notes.
 
 ---

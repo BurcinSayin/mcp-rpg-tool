@@ -1,9 +1,10 @@
 {
   "name": "@orinnadiak/mcp-rpg-tools",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.1",
   "license": "MIT",
   "publishConfig": {
     "access": "public",
+    "tag": "beta",
     "registry": "https://registry.npmjs.org/"
   },
   "files": ["dist/**/*.js", "dist/**/*.js.map", "dist/**/*.d.ts", "README.md", "docs/providers/pf2e.md", "LICENSE"],

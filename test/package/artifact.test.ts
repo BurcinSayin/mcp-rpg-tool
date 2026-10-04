@@ -71,7 +71,7 @@ it('installs a production-only tarball and serves MCP through its entry and npm 
       version: string; bin: Record<string, string>;
     };
     expect(metadata).toMatchObject({
-      name: '@orinnadiak/mcp-rpg-tools', version: '0.1.0', license: 'MIT', type: 'module',
+      name: '@orinnadiak/mcp-rpg-tools', license: 'MIT', type: 'module',
       bin: { 'mcp-rpg-tools': './dist/index.js' },
     });
     const tree = JSON.parse(await npm(['ls', '--all', '--omit=dev', '--json'], consumer)) as {

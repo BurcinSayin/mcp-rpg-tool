@@ -18,8 +18,10 @@ Pathfinder 2e requires a network connection — see its
 ## Install and configure your MCP client
 
 The selected public npm package is **`@orinnadiak/mcp-rpg-tools`**.
-The following pinned configurations are for the **planned first release, 0.1.0**.
-Publication is pending: these examples are not yet verified against npm.
+The current code is **beta, not a production release**. The following pinned
+configurations target the **planned first beta, 0.1.0-beta.1**.
+This beta is not published yet; the former `0.1.0` npm package was manually removed.
+These examples are not yet verified against npm.
 Consumers will not need to clone this repository or install a TypeScript compiler.
 
 ### Linux
@@ -29,7 +31,7 @@ Consumers will not need to clone this repository or install a TypeScript compile
   "mcpServers": {
     "rpg-tools": {
       "command": "npx",
-      "args": ["--yes", "@orinnadiak/mcp-rpg-tools@0.1.0"]
+      "args": ["--yes", "@orinnadiak/mcp-rpg-tools@0.1.0-beta.1"]
     }
   }
 }
@@ -44,7 +46,7 @@ For clients that cannot launch npm's `.cmd` shim directly, use a command shell:
   "mcpServers": {
     "rpg-tools": {
       "command": "cmd",
-      "args": ["/d", "/s", "/c", "npx --yes @orinnadiak/mcp-rpg-tools@0.1.0"]
+      "args": ["/d", "/s", "/c", "npx --yes @orinnadiak/mcp-rpg-tools@0.1.0-beta.1"]
     }
   }
 }
@@ -53,7 +55,7 @@ For clients that cannot launch npm's `.cmd` shim directly, use a command shell:
 Alternatively, after publication:
 
 ```sh
-npm install --global @orinnadiak/mcp-rpg-tools@0.1.0
+npm install --global @orinnadiak/mcp-rpg-tools@0.1.0-beta.1
 mcp-rpg-tools
 ```
 
@@ -63,11 +65,15 @@ launch `mcp-rpg-tools.cmd` directly likewise need `cmd` with
 To upgrade, replace the explicit version and restart the MCP server. Global users
 reinstall the desired exact version.
 
+After beta publication, `@orinnadiak/mcp-rpg-tools@beta` opts into the moving beta
+channel. Exact-version configurations above remain the primary examples.
+Unqualified installs do not select beta; no stable `latest` release is available.
+
 ### Release verification, ownership, and automation
 
 The repository remains private; publishing makes the shipped JavaScript public.
 Releases are automated via GitHub Actions when an annotated semantic-version tag
-(e.g. `v0.1.0`) is pushed to `main`. See the [Release Runbook](docs/release-runbook.md)
+(e.g. `v0.1.0-beta.1`) is pushed to `main`. See the [Release Runbook](docs/release-runbook.md)
 for step-by-step guidance on version bumps, tagging, npm Trusted Publishing (OIDC),
 dist-tags, recovery from partial completion, and private repository limitations.
 

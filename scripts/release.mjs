@@ -74,7 +74,8 @@ export function validateReleaseTag(tag, packageVersion, serverVersion) {
   }
 
   const isPrerelease = Boolean(parsedTag.prerelease);
-  const distTag = isPrerelease ? 'next' : 'latest';
+  const distTag = !isPrerelease ? 'latest'
+    : parsedTag.prerelease?.split('.')[0] === 'beta' ? 'beta' : 'next';
 
   return {
     tag,
