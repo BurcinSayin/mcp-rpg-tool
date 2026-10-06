@@ -78,13 +78,17 @@ The project adheres to [Semantic Versioning 2.0.0](https://semver.org/).
   - npm dist-tag: `latest`
   - GitHub Release: Standard release (`prerelease: false`)
 
-**Critical Invariant**: Prerelease publication does not assign npm's `latest`
-dist-tag. Without a stable `latest`, consumers must explicitly select a beta
-version or the `beta` channel; unqualified installs do not select beta.
+**Critical Invariant**: Reserve npm's `latest` dist-tag for stable releases.
+Consumers should explicitly select a beta version or the `beta` channel.
+After publication, check `npm view @orinnadiak/mcp-rpg-tools dist-tags --json`.
+If `latest` points to a beta and no stable release exists, remove only that tag
+with `npm dist-tag rm @orinnadiak/mcp-rpg-tools latest`; do not unpublish the version.
+If a stable release exists, restore `latest` to that stable version instead.
+The checksum-matching recovery path skips publication and does not repair dist-tags.
 
-The current planned release is `0.1.0-beta.1`; subsequent betas increment the
-counter (`0.1.0-beta.2`, etc.). `publishConfig.tag: "beta"` also protects ordinary
-manual `npm publish` from defaulting to `latest`.
+The first beta, `0.1.0-beta.1`, is published; subsequent betas increment the
+counter (`0.1.0-beta.2`, etc.). `publishConfig.tag: "beta"` and an explicit
+`--tag beta` select the intended prerelease channel for manual publication.
 
 npm 11.16.0's publication preview can still print `tag latest` when the tag comes
 from `publishConfig`: its notice uses the original config value, while effective
@@ -113,7 +117,7 @@ All releases must originate from commits on the default branch (`main`). Release
    ```sh
    npm version <new-version> --no-git-tag-version
    ```
-   *(Current beta example: `npm version 0.1.0-beta.1 --no-git-tag-version`; this updates both package and lockfile versions.)*
+   *(Next beta example: `npm version 0.1.0-beta.2 --no-git-tag-version`; this updates both package and lockfile versions.)*
 3. Verify local build and test suites pass:
    ```sh
    npm run typecheck
@@ -141,7 +145,7 @@ git tag -a v<new-version> -m "Release v<new-version>"
 git push origin v<new-version>
 ```
 
-*(Current beta example: `git tag -a v0.1.0-beta.1 -m "Release v0.1.0-beta.1" && git push origin v0.1.0-beta.1`; tagging and pushing are publication steps, not beta preparation.)*
+*(Next beta example: `git tag -a v0.1.0-beta.2 -m "Release v0.1.0-beta.2" && git push origin v0.1.0-beta.2`; tagging and pushing trigger publication. Do not recreate the existing `v0.1.0-beta.1` tag.)*
 
 ### Step 3: Monitor Workflow
 
@@ -189,13 +193,23 @@ When re-running the release workflow:
 
 ---
 
-## 6. Private Repository Distribution Limitations
+## 6. Public Distribution
 
-The GitHub source repository (`BurcinSayin/mcp-rpg-tool`) is private:
+The [GitHub source repository](https://github.com/BurcinSayin/mcp-rpg-tool)
+and the [npm package](https://www.npmjs.com/package/@orinnadiak/mcp-rpg-tools)
+are public. The first beta is available as
+[`v0.1.0-beta.1`](https://github.com/BurcinSayin/mcp-rpg-tool/releases/tag/v0.1.0-beta.1).
 
-1. **GitHub Release Assets**: Assets attached to GitHub Releases (such as `.tgz` and `.sha256` files) require authenticated access with read permissions to the GitHub repository. Unauthenticated or public users will encounter HTTP 404/403 when trying to download release assets directly from GitHub.
-2. **Public npm Package**: In contrast, the npm package `@orinnadiak/mcp-rpg-tools` is public.
-3. **User Guidance**: Public consumers should always configure clients using the published npm package:
-   - Linux / macOS: `npx --yes @orinnadiak/mcp-rpg-tools@<version>`
-   - Windows: `cmd` with `/d /s /c npx --yes @orinnadiak/mcp-rpg-tools@<version>`
-   - Global install: `npm install --global @orinnadiak/mcp-rpg-tools@<version>`
+1. **GitHub Release Assets**: Published releases include the `.tgz` package and
+   its `.sha256` checksum. Public users can download them without GitHub
+   authentication. Verify the checksum before using a downloaded artifact.
+2. **npm Installation**: Consumers do not need a repository checkout, GitHub
+   credentials, or a TypeScript compiler. Prefer exact-version configurations:
+   - Linux / macOS: `npx --yes @orinnadiak/mcp-rpg-tools@0.1.0-beta.1`
+   - Windows: `cmd` with `/d /s /c npx --yes @orinnadiak/mcp-rpg-tools@0.1.0-beta.1`
+   - Global install: `npm install --global @orinnadiak/mcp-rpg-tools@0.1.0-beta.1`
+   - Use `@beta` instead of the exact version only when opting into the moving beta channel.
+3. **Provenance**: Public repository visibility permits GitHub Actions provenance
+   for future workflow publications when npm authentication is configured.
+   A terminal-published artifact does not acquire GitHub Actions provenance when
+   the workflow later skips publication and creates the GitHub Release.

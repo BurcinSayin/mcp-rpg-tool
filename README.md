@@ -17,12 +17,11 @@ Pathfinder 2e requires a network connection — see its
 
 ## Install and configure your MCP client
 
-The selected public npm package is **`@orinnadiak/mcp-rpg-tools`**.
-The current code is **beta, not a production release**. The following pinned
-configurations target the **planned first beta, 0.1.0-beta.1**.
-This beta is not published yet; the former `0.1.0` npm package was manually removed.
-These examples are not yet verified against npm.
-Consumers will not need to clone this repository or install a TypeScript compiler.
+The public npm package is
+**[`@orinnadiak/mcp-rpg-tools`](https://www.npmjs.com/package/@orinnadiak/mcp-rpg-tools)**.
+The current release is **beta, not a production release**. The following pinned
+configurations use the published **0.1.0-beta.1**.
+Consumers do not need to clone this repository or install a TypeScript compiler.
 
 ### Linux
 
@@ -52,7 +51,7 @@ For clients that cannot launch npm's `.cmd` shim directly, use a command shell:
 }
 ```
 
-Alternatively, after publication:
+Alternatively, install the executable globally:
 
 ```sh
 npm install --global @orinnadiak/mcp-rpg-tools@0.1.0-beta.1
@@ -65,17 +64,20 @@ launch `mcp-rpg-tools.cmd` directly likewise need `cmd` with
 To upgrade, replace the explicit version and restart the MCP server. Global users
 reinstall the desired exact version.
 
-After beta publication, `@orinnadiak/mcp-rpg-tools@beta` opts into the moving beta
-channel. Exact-version configurations above remain the primary examples.
-Unqualified installs do not select beta; no stable `latest` release is available.
+`@orinnadiak/mcp-rpg-tools@beta` opts into the moving beta channel.
+Exact-version configurations above remain the primary examples. No stable release
+is available; explicitly select a version or `beta` rather than relying on `latest`.
 
 ### Release verification, ownership, and automation
 
-The repository remains private; publishing makes the shipped JavaScript public.
+The [source repository](https://github.com/BurcinSayin/mcp-rpg-tool) is public.
+The [beta release](https://github.com/BurcinSayin/mcp-rpg-tool/releases/tag/v0.1.0-beta.1)
+includes the package tarball and its SHA-256 checksum; public downloads do not
+require GitHub authentication.
 Releases are automated via GitHub Actions when an annotated semantic-version tag
-(e.g. `v0.1.0-beta.1`) is pushed to `main`. See the [Release Runbook](docs/release-runbook.md)
-for step-by-step guidance on version bumps, tagging, npm Trusted Publishing (OIDC),
-dist-tags, recovery from partial completion, and private repository limitations.
+(e.g. `v0.1.0-beta.2`) is pushed for a commit on `main`. See the
+[Release Runbook](docs/release-runbook.md) for version bumps, tagging, npm Trusted
+Publishing (OIDC), dist-tags, recovery from partial completion, and public distribution.
 
 CI covers the installed-tarball suite on Linux x64 and Windows with Node **22.19.0**
 (the exact supported minimum) and **24**, using npm **11.16.0** on both runtimes. It checks direct Node
