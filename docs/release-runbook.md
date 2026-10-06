@@ -14,6 +14,14 @@ Releases are automated via GitHub Actions workflows and orchestrated by [`script
 
 Runtime and development tooling require Node **22.19.0 or newer**; Node **24** is recommended for local release work. The supported Node lines are **22** (22.19.0+) and **24**. Node 20 is no longer supported: MCP Inspector 2.3 and its nested undici 8 require the new floor. Use the pinned npm **11.16.0** (`npm install --global npm@11.16.0`) with the committed lockfile for reproducible installs.
 
+### GitHub Actions Runtime
+
+Both workflows use [`actions/checkout@v7`](https://github.com/actions/checkout/tree/v7) and [`actions/setup-node@v7`](https://github.com/actions/setup-node/tree/v7), whose action and post-job entry points run on Node 24. This is separate from the application test matrix and runtime floor above. The Node 24 action runtime requires Actions Runner **2.327.1 or newer**; checkout's authenticated Git support inside Docker container actions requires **2.329.0 or newer**. These workflows use GitHub-hosted Ubuntu/Windows runners and do not run container actions.
+
+The migration preserves explicit `cache: 'npm'` and `fetch-depth: 0` in the CI dry-run and release checkouts. setup-node v6 removed `always-auth` (not used here); v7 removed the dummy `NODE_AUTH_TOKEN` fallback. npm 11.16.0 trusted publishing does not require that fallback, and the release step still supplies `NPM_TOKEN` when configured. checkout v7's fork protections concern `pull_request_target`/`workflow_run`, neither of which these workflows use.
+
+After changing action versions, require all five CI jobs to pass and dispatch `release.yml` on the updated ref with `dry_run=true` (never use the publishing default for verification). Inspect setup, npm cache restore/save, and post-job logs for the Node 20 runtime annotation, `DEP0040` (`punycode`), and `DEP0169` (`url.parse()`). If supported actions still emit these warnings, record the affected action version, run/step links, and an upstream issue; do not suppress warnings or change the application Node matrix.
+
 ### Tag Selection and Dry Runs
 
 - An explicit `--tag` takes precedence and must match `v` plus the package and server versions.
