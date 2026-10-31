@@ -22,6 +22,57 @@ The migration preserves explicit `cache: 'npm'` and `fetch-depth: 0` in the CI d
 
 After changing action versions, require all five CI jobs to pass and dispatch `release.yml` on the updated ref with `dry_run=true` (never use the publishing default for verification). Inspect setup, npm cache restore/save, and post-job logs for the Node 20 runtime annotation, `DEP0040` (`punycode`), and `DEP0169` (`url.parse()`). If supported actions still emit these warnings, record the affected action version, run/step links, and an upstream issue; do not suppress warnings or change the application Node matrix.
 
+### Linux Runner Image Policy
+
+**Retain `ubuntu-latest` consistently** for the CI Linux matrix, dependent CI release dry run, and Release workflow. Keep both `windows-latest` matrix jobs and Node `['22.19.0', '24']`; all jobs install npm **11.16.0** and print the resolved Node/npm versions. The actual OS, image name/version, and runner version come from each job's **Set up job** log, not the requested label.
+
+This decision addresses [issue #18](https://github.com/BurcinSayin/mcp-rpg-tool/issues/18). The [upstream Ubuntu 26 migration announcement](https://github.com/actions/runner-images/issues/14748) schedules the `ubuntu-latest` rollout for October 19–November 19, 2026. The announcement and historical Ubuntu 24 successes are not Ubuntu 26 compatibility evidence; the explicit-image validation below is.
+
+For future image transitions, temporarily change all three Linux selectors together to the candidate's explicit label on a candidate branch. Require the existing four Linux/Windows Node matrix jobs, installed-package checks, dependent CI dry run, and a Release dispatch explicitly using `dry_run=true` to pass; verify actual images, Node/npm versions, run/job links, and SHAs before restoring `ubuntu-latest` together and validating the final policy again. If the candidate fails, reports another OS, or cannot obtain a runner within 30 minutes, preserve the failure evidence and temporarily pin all three selectors to the last validated image. An announcement, elapsed date, or passing old-image run does not establish candidate compatibility.
+
+#### Historical Ubuntu 24 Baseline — 2026-10-06
+
+These pre-existing successes establish only the old-image baseline. Both jobs requested `ubuntu-latest` and actually used Ubuntu **24.04.5**, image **`ubuntu-24.04`**, version **`20260927.320.1`**, runner **2.337.0**, and Node **22.19.0**. Their npm setup installed **11.16.0** successfully, but did not yet print a post-install version.
+
+| Workflow / job | Tested commit | Observed result |
+| --- | --- | --- |
+| [CI run](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/37457176352) / [Linux Node 22 job](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/37457176352/job/112247522829) | `9db1b7948423dbff78688a6cd0227d04d30941ae` | Typecheck, lint, build, 215 unit/integration tests, and installed-package smoke passed. |
+| [Release run](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/37456928440) / [dry-run job](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/37456928440/job/112246715202) | `c0bf7a3d0db8c742512e40e6fa176af7fec8831b` | Explicit `dry_run=true`; verification gate and packaging smoke passed; non-publication completion marker observed. |
+
+#### Explicit Ubuntu 26 Validation — 2026-10-31
+
+Branch head **`f9a400377ef26c3b1065520e1fdaeff042da0d0d`** provisionally requested **`ubuntu-26.04`** at all three selectors. [CI run 41193369738](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193369738) reports that head SHA and checked out PR merge **`0cd7327347ae99417f9ce9bd670550fcc8732bbf`**, whose parents include the branch head. [Release run 41193652174](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193652174), dispatched with **`dry_run=true`**, checked out the branch head itself; the branch remained unchanged through completion.
+
+Every Linux job below actually used Ubuntu **26.04.1**, image **`ubuntu-26.04`**, version **`20261025.179.1`**. Both Windows jobs requested **`windows-latest`** and used Windows Server **2025 / 10.0.26100**, image **`windows-2025-vs2026`**, version **`20261021.278.1`**. All six jobs used runner **2.338.2** and printed post-install npm **11.16.0**.
+
+| Job | Resolved Node | Successful checks |
+| --- | --- | --- |
+| [CI Linux Node 22](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193369738/job/124514506562) | 22.19.0 | Typecheck, lint, build, 215 unit/integration tests, installed-package smoke. |
+| [CI Linux Node 24](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193369738/job/124514506348) | 24.22.1 | Typecheck, lint, build, 215 unit/integration tests, installed-package smoke. |
+| [CI Windows Node 22](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193369738/job/124514506546) | 22.19.0 | Typecheck, lint, build, 215 unit/integration tests, installed-package smoke. |
+| [CI Windows Node 24](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193369738/job/124514506493) | 24.22.1 | Typecheck, lint, build, 215 unit/integration tests, installed-package smoke. |
+| [CI release dry run](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193369738/job/124515147903) | 22.19.0 | `npm run release:check`: packaging smoke and non-publication completion. |
+| [Release dry run](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193652174/job/124515366766) | 22.19.0 | Typecheck, lint, 215 unit/integration tests; explicit dry-run path, packaging smoke and non-publication completion. |
+
+#### Final `ubuntu-latest` Policy Verification — 2026-10-31
+
+Branch head **`27f4c2e4db61b023e4582a2775b0e94bdbd5dc70`** restored all three Linux selectors to **`ubuntu-latest`**, with comments pointing here. [CI run 41193800610](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193800610) reports that head SHA and checked out PR merge **`9cd9cd5e8c6ad60b17ce121e39f7d143ca007896`**, whose parents include the branch head. [Release run 41193996851](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193996851), dispatched with **`dry_run=true`**, checked out the branch head itself; the branch remained unchanged through completion. The subsequent evidence-only documentation commit does not change either workflow.
+
+Every Linux job below actually used Ubuntu **24.04.5**, image **`ubuntu-24.04`**, version **`20261025.353.1`**, despite requesting `ubuntu-latest`. Both Windows jobs retained **`windows-latest`** and used Windows Server **2025 / 10.0.26100**, image **`windows-2025-vs2026`**, version **`20261030.294.1`**. All six jobs used runner **2.338.2** and printed post-install npm **11.16.0**. These final-policy runs do not replace the explicit Ubuntu 26 proof above.
+
+| Job | Resolved Node | Successful checks |
+| --- | --- | --- |
+| [CI Linux Node 22](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193800610/job/124515795109) | 22.19.0 | Typecheck, lint, build, 215 unit/integration tests, installed-package smoke. |
+| [CI Linux Node 24](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193800610/job/124515795113) | 24.22.1 | Typecheck, lint, build, 215 unit/integration tests, installed-package smoke. |
+| [CI Windows Node 22](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193800610/job/124515795068) | 22.19.0 | Typecheck, lint, build, 215 unit/integration tests, installed-package smoke. |
+| [CI Windows Node 24](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193800610/job/124515794936) | 24.22.2 | Typecheck, lint, build, 215 unit/integration tests, installed-package smoke. |
+| [CI release dry run](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193800610/job/124516237206) | 22.19.0 | `npm run release:check`: packaging smoke and non-publication completion. |
+| [Release dry run](https://github.com/BurcinSayin/mcp-rpg-tool/actions/runs/41193996851/job/124516370425) | 22.19.0 | Typecheck, lint, 215 unit/integration tests; explicit dry-run path, packaging smoke and non-publication completion. |
+
+**Installed-runtime evidence:** each matrix job ran the unchanged `test/package/artifact.test.ts` through `npm run test:package`. It installs a production-only tarball outside the checkout, launches the installed JS entry and npm executable, lists `toy_search_widget` / `toy_get_widget_details`, and calls details for `widget-1`, asserting `{ id: 'widget-1', body: 'A small brass widget. Turns clockwise.' }` without `isError: true`. Both release dry-run paths also execute this package smoke test.
+
+**Non-publication evidence and limits:** all four fresh dry-run jobs, plus the historical Release job, printed `[release] Packaging smoke test passed.` and `[release] Dry run complete. No publish or GitHub Release performed.` CI executed `release:check` (`--dry-run`); both fresh Release dispatch logs show the `if [ "true" = "true" ]` branch selecting `--dry-run`. The script returns from that branch before npm publication or GitHub Release creation. Each recorded dry run emitted ancestry and already-published/different-checksum notices, permitted by existing dry-run semantics; these are not successful real-publication gates. Final `ubuntu-latest` jobs also retained the upstream migration notice rather than suppressing it. No tags were created, moved, deleted, or pushed, and no real publish command was invoked for this validation.
+
 ### Tag Selection and Dry Runs
 
 - An explicit `--tag` takes precedence and must match `v` plus the package and server versions.
