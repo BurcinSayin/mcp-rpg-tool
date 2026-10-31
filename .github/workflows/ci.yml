@@ -20,7 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-26.04, windows-latest]
+        # Linux runner image policy: docs/release-runbook.md#linux-runner-image-policy
+        os: [ubuntu-latest, windows-latest]
         node: ['22.19.0', '24']
 
     steps:
@@ -59,7 +60,8 @@ jobs:
 
   dry-run:
     name: Release Dry-Run Check
-    runs-on: ubuntu-26.04
+    # Linux runner image policy: docs/release-runbook.md#linux-runner-image-policy
+    runs-on: ubuntu-latest
     needs: test
     steps:
       - name: Checkout repository (with git history)

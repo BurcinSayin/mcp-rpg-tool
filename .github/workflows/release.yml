@@ -23,7 +23,8 @@ concurrency:
 jobs:
   release:
     name: Publish and Release
-    runs-on: ubuntu-26.04
+    # Linux runner image policy: docs/release-runbook.md#linux-runner-image-policy
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository (full history for ancestry check)
         uses: actions/checkout@v7
