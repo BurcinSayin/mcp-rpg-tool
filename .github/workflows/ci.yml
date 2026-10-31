@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-26.04, windows-latest]
         node: ['22.19.0', '24']
 
     steps:
@@ -34,7 +34,10 @@ jobs:
           cache: 'npm'
 
       - name: Setup npm
-        run: npm install --global npm@11.16.0
+        run: |
+          npm install --global npm@11.16.0
+          node --version
+          npm --version
 
       - name: Install dependencies (clean install)
         run: npm ci
@@ -56,7 +59,7 @@ jobs:
 
   dry-run:
     name: Release Dry-Run Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: test
     steps:
       - name: Checkout repository (with git history)
@@ -71,7 +74,10 @@ jobs:
           cache: 'npm'
 
       - name: Setup npm
-        run: npm install --global npm@11.16.0
+        run: |
+          npm install --global npm@11.16.0
+          node --version
+          npm --version
 
       - name: Install dependencies
         run: npm ci
